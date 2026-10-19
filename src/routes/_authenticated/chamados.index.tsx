@@ -37,7 +37,7 @@ function Lista() {
     return tickets
       .filter((t) => (status === "all" || t.status === status) && (prio === "all" || t.priority === prio))
       .filter((t) => !s || [t.protocol, t.title, t.requester_name, t.department].some((x) => x?.toLowerCase().includes(s)))
-      .sort((a, b) => (me?.isStaff ? PRI_ORDER[a.priority] - PRI_ORDER[b.priority] : 0) || +new Date(b.created_at) - +new Date(a.created_at));
+      .sort((a, b) => (me?.isStaff ? (PRI_ORDER[a.priority] ?? 0) - (PRI_ORDER[b.priority] ?? 0) : 0) || +new Date(b.created_at) - +new Date(a.created_at));
   }, [tickets, q, status, prio, me]);
 
   return (

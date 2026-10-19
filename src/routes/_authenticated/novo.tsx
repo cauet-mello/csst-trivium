@@ -58,11 +58,11 @@ function NovoChamado() {
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((s) => ({ ...s, [k]: e.target.value }));
 
   async function analyze() {
-    if (f.description.trim().length < 10) return toast.info("Descreva a situação primeiro (mín. 10 caracteres).");
+    if (f.description.trim().length < 10) { toast.info("Descreva a situação primeiro (mín. 10 caracteres)."); return; }
     setAiLoading(true);
     const r = await triage({ data: { title: f.title, description: f.description, category: f.category, location: f.location } }).catch(() => null);
     setAiLoading(false);
-    if (!r || !r.ok) return toast.error(r && !r.ok ? r.error : "Falha na análise");
+    if (!r || !r.ok) { toast.error(r && !r.ok ? r.error : "Falha na análise"); return; }
     setAi(r.triage as Triage);
     setPriority(r.triage.suggested_priority);
   }
@@ -74,7 +74,7 @@ function NovoChamado() {
       const errs: Record<string, string> = {};
       parsed.error.issues.forEach((i) => (errs[String(i.path[0])] = i.message));
       setErrors(errs);
-      return toast.error("Verifique os campos obrigatórios.");
+      { toast.error("Verifique os campos obrigatórios."); return; }
     }
     setErrors({});
     setSaving(true);
@@ -95,7 +95,7 @@ function NovoChamado() {
       .single();
     if (error || !t) {
       setSaving(false);
-      return toast.error("Não foi possível registrar o chamado.");
+      { toast.error("Não foi possível registrar o chamado."); return; }
     }
     for (const file of files) {
       const path = `${me!.id}/${t.id}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;

@@ -170,7 +170,7 @@ function Dashboard() {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Chart title="Chamados por prioridade">
           <BarChart data={k.porPrioridade}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="name" fontSize={12} /><YAxis allowDecimals={false} fontSize={12} /><Tooltip />
-            <Bar dataKey="value" name="Chamados" radius={[6, 6, 0, 0]}>{k.porPrioridade.map((p) => <Cell key={p.key} fill={PCOLOR[p.key]} />)}</Bar></BarChart>
+            <Bar dataKey="value" name="Chamados" radius={[6, 6, 0, 0]}>{k.porPrioridade.map((p) => <Cell key={p.key} fill={PCOLOR[p.key]!} />)}</Bar></BarChart>
         </Chart>
         <Chart title="Evolução de abertura">
           <LineChart data={k.linha}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="name" fontSize={12} /><YAxis allowDecimals={false} fontSize={12} /><Tooltip /><Line type="monotone" dataKey="value" name="Chamados" stroke="var(--chart-1)" strokeWidth={2.5} dot={false} /></LineChart>

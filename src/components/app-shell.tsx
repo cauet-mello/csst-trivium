@@ -17,10 +17,9 @@ const NAV = [
   { to: "/novo", label: "Abrir chamado", icon: FilePlus2, staff: false },
   { to: "/chamados", label: "Chamados", icon: ClipboardList, staff: false },
   { to: "/dashboard", label: "Dashboard", icon: Gauge, staff: true },
-  { to: "/admin", label: "Administração", icon: Settings, staff: true },
 ] as const;
 
-function Nav({ onNav }: { onNav?: () => void }) {
+function Nav({ onNav }: { onNav?: (() => void) | undefined }) {
   const { data: me } = useMe();
   const path = useRouterState({ select: (s) => s.location.pathname });
   return (
@@ -46,7 +45,7 @@ function Nav({ onNav }: { onNav?: () => void }) {
   );
 }
 
-function SidebarBody({ onNav }: { onNav?: () => void }) {
+function SidebarBody({ onNav }: { onNav?: (() => void) | undefined }) {
   const { data: me } = useMe();
   const navigate = useNavigate();
   const qc = useQueryClient();

@@ -49,11 +49,11 @@ function Detalhe() {
     qc.invalidateQueries({ queryKey: ["tickets"] });
   };
 
-  async function update(patch: Record<string, unknown>, okMsg: string) {
+  async function update(patch: any, okMsg: string) {
     setBusy(true);
     const { error } = await supabase.from("tickets").update(patch).eq("id", id);
     setBusy(false);
-    if (error) return toast.error("Não foi possível atualizar.");
+    if (error) { toast.error("Não foi possível atualizar."); return; }
     toast.success(okMsg);
     refresh();
   }
@@ -61,7 +61,7 @@ function Detalhe() {
   async function addComment() {
     if (!comment.trim()) return;
     const { error } = await supabase.from("ticket_events").insert({ ticket_id: id, actor_id: me!.id, actor_name: me!.full_name || me!.username, event_type: "comment", note: comment.trim().slice(0, 3000) });
-    if (error) return toast.error("Falha ao adicionar informação.");
+    if (error) { toast.error("Falha ao adicionar informação."); return; }
     setComment("");
     refresh();
   }
@@ -171,7 +171,7 @@ function Detalhe() {
               <h2 className="font-semibold text-primary-deep">Gerenciar atendimento</h2>
               <div className="space-y-1.5">
                 <Label>Status</Label>
-                <Select value={t.status} onValueChange={(v) => { if (v === "concluido" && !t.solution && !solution.trim()) return toast.error("Registre a solução aplicada antes de concluir."); update(v === "concluido" && solution.trim() ? { status: v, solution: solution.trim() } : { status: v }, "Status atualizado"); }} disabled={busy}>
+                <Select value={t.status} onValueChange={(v) => { if (v === "concluido" && !t.solution && !solution.trim()) { toast.error("Registre a solução aplicada antes de concluir."); return; } update(v === "concluido" && solution.trim() ? { status: v, solution: solution.trim() } : { status: v }, "Status atualizado"); }} disabled={busy}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                 </Select>
