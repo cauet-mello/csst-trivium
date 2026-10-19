@@ -15,6 +15,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedNovoRouteImport } from './routes/_authenticated/novo'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AuthenticatedChamadosIndexRouteImport } from './routes/_authenticated/chamados.index'
+import { Route as AuthenticatedChamadosIdRouteImport } from './routes/_authenticated/chamados.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -45,6 +47,17 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedChamadosIndexRoute =
+  AuthenticatedChamadosIndexRouteImport.update({
+    id: '/chamados/',
+    path: '/chamados/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedChamadosIdRoute = AuthenticatedChamadosIdRouteImport.update({
+  id: '/chamados/$id',
+  path: '/chamados/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -52,6 +65,8 @@ export interface FileRoutesByFullPath {
   '/novo': typeof AuthenticatedNovoRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/api/chat': typeof ApiChatRoute
+  '/chamados/$id': typeof AuthenticatedChamadosIdRoute
+  '/chamados/': typeof AuthenticatedChamadosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -59,6 +74,8 @@ export interface FileRoutesByTo {
   '/novo': typeof AuthenticatedNovoRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/api/chat': typeof ApiChatRoute
+  '/chamados/$id': typeof AuthenticatedChamadosIdRoute
+  '/chamados': typeof AuthenticatedChamadosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,12 +85,28 @@ export interface FileRoutesById {
   '/_authenticated/novo': typeof AuthenticatedNovoRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/api/chat': typeof ApiChatRoute
+  '/_authenticated/chamados/$id': typeof AuthenticatedChamadosIdRoute
+  '/_authenticated/chamados/': typeof AuthenticatedChamadosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/novo' | '/painel' | '/api/chat'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/novo'
+    | '/painel'
+    | '/api/chat'
+    | '/chamados/$id'
+    | '/chamados/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/novo' | '/painel' | '/api/chat'
+  to:
+    | '/'
+    | '/auth'
+    | '/novo'
+    | '/painel'
+    | '/api/chat'
+    | '/chamados/$id'
+    | '/chamados'
   id:
     | '__root__'
     | '/'
@@ -82,6 +115,8 @@ export interface FileRouteTypes {
     | '/_authenticated/novo'
     | '/_authenticated/painel'
     | '/api/chat'
+    | '/_authenticated/chamados/$id'
+    | '/_authenticated/chamados/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -135,17 +170,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/chamados/': {
+      id: '/_authenticated/chamados/'
+      path: '/chamados'
+      fullPath: '/chamados/'
+      preLoaderRoute: typeof AuthenticatedChamadosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/chamados/$id': {
+      id: '/_authenticated/chamados/$id'
+      path: '/chamados/$id'
+      fullPath: '/chamados/$id'
+      preLoaderRoute: typeof AuthenticatedChamadosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedNovoRoute: typeof AuthenticatedNovoRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
+  AuthenticatedChamadosIdRoute: typeof AuthenticatedChamadosIdRoute
+  AuthenticatedChamadosIndexRoute: typeof AuthenticatedChamadosIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNovoRoute: AuthenticatedNovoRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
+  AuthenticatedChamadosIdRoute: AuthenticatedChamadosIdRoute,
+  AuthenticatedChamadosIndexRoute: AuthenticatedChamadosIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
