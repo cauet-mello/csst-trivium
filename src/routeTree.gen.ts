@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedNotificacoesRouteImport } from './routes/_authenticated/notificacoes'
 import { Route as AuthenticatedNovoRouteImport } from './routes/_authenticated/novo'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -32,6 +34,17 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotificacoesRoute =
+  AuthenticatedNotificacoesRouteImport.update({
+    id: '/notificacoes',
+    path: '/notificacoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNovoRoute = AuthenticatedNovoRouteImport.update({
   id: '/novo',
   path: '/novo',
@@ -62,6 +75,8 @@ const AuthenticatedChamadosIdRoute = AuthenticatedChamadosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/notificacoes': typeof AuthenticatedNotificacoesRoute
   '/novo': typeof AuthenticatedNovoRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/api/chat': typeof ApiChatRoute
@@ -71,6 +86,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/notificacoes': typeof AuthenticatedNotificacoesRoute
   '/novo': typeof AuthenticatedNovoRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/api/chat': typeof ApiChatRoute
@@ -82,6 +99,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/notificacoes': typeof AuthenticatedNotificacoesRoute
   '/_authenticated/novo': typeof AuthenticatedNovoRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/api/chat': typeof ApiChatRoute
@@ -93,6 +112,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/dashboard'
+    | '/notificacoes'
     | '/novo'
     | '/painel'
     | '/api/chat'
@@ -102,6 +123,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/dashboard'
+    | '/notificacoes'
     | '/novo'
     | '/painel'
     | '/api/chat'
@@ -112,6 +135,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/notificacoes'
     | '/_authenticated/novo'
     | '/_authenticated/painel'
     | '/api/chat'
@@ -148,6 +173,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notificacoes': {
+      id: '/_authenticated/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof AuthenticatedNotificacoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/novo': {
       id: '/_authenticated/novo'
@@ -188,6 +227,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedNotificacoesRoute: typeof AuthenticatedNotificacoesRoute
   AuthenticatedNovoRoute: typeof AuthenticatedNovoRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedChamadosIdRoute: typeof AuthenticatedChamadosIdRoute
@@ -195,6 +236,8 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedNotificacoesRoute: AuthenticatedNotificacoesRoute,
   AuthenticatedNovoRoute: AuthenticatedNovoRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedChamadosIdRoute: AuthenticatedChamadosIdRoute,
