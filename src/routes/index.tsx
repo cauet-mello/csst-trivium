@@ -68,7 +68,7 @@ function Login() {
     navigate({ to: staff && mode === "admin" ? "/dashboard" : "/painel", replace: true });
   }
 
-  const S = SLIDES[slide];
+  const S = SLIDES[slide]!;
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       <section className="relative hidden overflow-hidden bg-hero p-10 text-primary-foreground lg:flex lg:flex-col">
