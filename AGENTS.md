@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep password sign-in and administrative-role resolution in the browser-safe login helper so access failures can be tested independently of the form.
+- Initial staff provisioning requires an authenticated staff caller; never expose privileged account creation as an anonymous server function.
