@@ -11,7 +11,10 @@ async function ensureStaff(supabase: any, userId: string) {
 }
 
 // Idempotent: creates the two fixed staff accounts once, with passwords from server secrets.
-export const bootstrapAdmins = createServerFn({ method: "POST" }).handler(async () => {
+export const bootstrapAdmins = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+  await ensureStaff(context.supabase, context.userId);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const seeds = [
     { username: "ederson.silveira", full_name: "Ederson Silveira", role: "admin", env: "ADMIN_EDERSON_PASSWORD" },
@@ -27,9 +30,17 @@ export const bootstrapAdmins = createServerFn({ method: "POST" }).handler(async 
       email: usernameToEmail(s.username), password, email_confirm: true,
       user_metadata: { username: s.username, full_name: s.full_name },
     });
-    if (error || !data.user) { results.push(`${s.username}: erro`); continue; }
-    await supabaseAdmin.from("profiles").insert({ id: data.user.id, username: s.username, full_name: s.full_name, department: "Segurança do Trabalho" });
-    await supabaseAdmin.from("user_roles").insert({ user_id: data.user.id, role: s.role });
+    if (error || !data.user) {
+      results.push(`${s.username}: ${error?.code === "weak_password" ? "senha rejeitada por ser fraca" : "falha na criação da conta"}`);
+      continue;
+    }
+    const { error: profileError } = await supabaseAdmin.from("profiles").insert({ id: data.user.id, username: s.username, full_name: s.full_name, department: "Segurança do Trabalho" });
+    const { error: roleError } = profileError ? { error: profileError } : await supabaseAdmin.from("user_roles").insert({ user_id: data.user.id, role: s.role });
+    if (profileError || roleError) {
+      await supabaseAdmin.auth.admin.deleteUser(data.user.id);
+      results.push(`${s.username}: falha ao configurar o acesso`);
+      continue;
+    }
     results.push(`${s.username}: criado`);
   }
   return { results };
