@@ -19,7 +19,7 @@ import { PRIORITIES, type Priority } from "@/lib/domain";
 import { triageTicket } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/novo")({
-  head: () => ({ meta: [{ title: "Abrir chamado — Trivium SST" }, { name: "description", content: "Registre um novo chamado de Segurança do Trabalho." }, { property: "og:title", content: "Abrir chamado — Trivium SST" }, { property: "og:description", content: "Registre um novo chamado de Segurança do Trabalho." }] }),
+  head: () => ({ meta: [{ title: "Abrir chamado — Trivium SST" }, { name: "description", content: "Registre um novo chamado de Segurança do Trabalho." }, { property: "og:title", content: "Abrir chamado — Trivium SST" }, { property: "og:description", content: "Registre um novo chamado de Segurança do Trabalho." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: NovoChamado,
 });
 

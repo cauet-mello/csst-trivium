@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/notificacoes")({
-  head: () => ({ meta: [{ title: "Notificações — Trivium SST" }, { name: "description", content: "Atualizações dos seus chamados." }, { property: "og:title", content: "Notificações — Trivium SST" }, { property: "og:description", content: "Atualizações dos seus chamados." }] }),
+  head: () => ({ meta: [{ title: "Notificações — Trivium SST" }, { name: "description", content: "Atualizações dos seus chamados." }, { property: "og:title", content: "Notificações — Trivium SST" }, { property: "og:description", content: "Atualizações dos seus chamados." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Notificacoes,
 });
 

@@ -11,7 +11,7 @@ import mascot from "@/assets/mascote_trivium_sem_fundo.png.asset.json";
 import checklist from "@/assets/icone_checklist_trivium.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/painel")({
-  head: () => ({ meta: [{ title: "Início — Trivium SST" }, { name: "description", content: "Seus chamados de Segurança do Trabalho." }, { property: "og:title", content: "Início — Trivium SST" }, { property: "og:description", content: "Seus chamados de Segurança do Trabalho." }] }),
+  head: () => ({ meta: [{ title: "Início — Trivium SST" }, { name: "description", content: "Seus chamados de Segurança do Trabalho." }, { property: "og:title", content: "Início — Trivium SST" }, { property: "og:description", content: "Seus chamados de Segurança do Trabalho." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Painel,
 });
 

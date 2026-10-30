@@ -14,7 +14,7 @@ import { PRIORITIES, STATUSES, isOverdue, priorityLabel, statusLabel, OPEN_STATU
 import mascot from "@/assets/mascote_trivium_sem_fundo.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Trivium SST" }, { name: "description", content: "Indicadores de chamados de Segurança do Trabalho." }, { property: "og:title", content: "Dashboard — Trivium SST" }, { property: "og:description", content: "Indicadores de chamados de Segurança do Trabalho." }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Trivium SST" }, { name: "description", content: "Indicadores de chamados de Segurança do Trabalho." }, { property: "og:title", content: "Dashboard — Trivium SST" }, { property: "og:description", content: "Indicadores de chamados de Segurança do Trabalho." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Dashboard,
 });
 

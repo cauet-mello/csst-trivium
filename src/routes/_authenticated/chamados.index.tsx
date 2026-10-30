@@ -12,7 +12,7 @@ import { PriorityBadge, StatusBadge } from "@/components/badges";
 import { PRIORITIES, STATUSES, isOverdue } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/chamados/")({
-  head: () => ({ meta: [{ title: "Chamados — Trivium SST" }, { name: "description", content: "Consulta e histórico de chamados." }, { property: "og:title", content: "Chamados — Trivium SST" }, { property: "og:description", content: "Consulta e histórico de chamados." }] }),
+  head: () => ({ meta: [{ title: "Chamados — Trivium SST" }, { name: "description", content: "Consulta e histórico de chamados." }, { property: "og:title", content: "Chamados — Trivium SST" }, { property: "og:description", content: "Consulta e histórico de chamados." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Lista,
 });
 
