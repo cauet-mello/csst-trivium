@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, ShieldCheck, Sparkles, LineChart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { usernameToEmail } from "@/lib/domain";
+import { signInToApp } from "@/lib/login";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,22 +53,17 @@ function Login() {
     setError(null);
     if (!username.trim() || !password) return setError("Informe login e senha.");
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email: usernameToEmail(username), password });
-    if (error || !data.user) {
+    try {
+      const destination = await signInToApp(username, password, mode);
+      await navigate({ to: destination, replace: true });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível entrar. Tente novamente.");
+    } finally {
       setLoading(false);
-      return setError("Login ou senha inválidos, ou conta desativada.");
     }
-    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
-    const staff = (roles ?? []).some((r) => r.role === "admin" || r.role === "developer");
-    if (mode === "admin" && !staff) {
-      await supabase.auth.signOut();
-      setLoading(false);
-      return setError("Esta conta não possui acesso administrativo. Use o Acesso Solicitante.");
-    }
-    navigate({ to: staff && mode === "admin" ? "/dashboard" : "/painel", replace: true });
   }
 
-  const S = SLIDES[slide]!;
+  const S = SLIDES[slide] ?? SLIDES[0];
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       <section className="relative hidden overflow-hidden bg-hero p-10 text-primary-foreground lg:flex lg:flex-col">

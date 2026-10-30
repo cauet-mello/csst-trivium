@@ -1,5 +1,5 @@
 # Roadmap — Trivium Chamados SST
-- [ ] Verificar login e corrigir falhas de entrada (teste autenticado depende de uma conta existente)
+- [ ] Concluir verificação de login, atualização da página, saída e bloqueio de páginas sem sessão
 - [ ] Backend (Lovable Cloud): perfis, papéis, chamados, histórico, notificações, categorias, setores
 - [ ] Login (contas criadas pelo admin) + senhas iniciais dos admins via formulário seguro
 - [ ] Abertura de chamado + assistente IA (triagem, setor, prioridade)
