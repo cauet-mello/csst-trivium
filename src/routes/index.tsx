@@ -29,7 +29,7 @@ const SLIDES = [
   { icon: ShieldCheck, title: "Segurança em primeiro lugar", text: "Registre condições inseguras, falta de EPI e riscos em poucos passos." },
   { icon: Sparkles, title: "Triagem com Inteligência Artificial", text: "O assistente orienta, sugere prioridade e identifica o setor responsável." },
   { icon: LineChart, title: "Acompanhamento transparente", text: "Linha do tempo completa de cada chamado, do envio à conclusão." },
-];
+] as const;
 
 function Login() {
   const navigate = useNavigate();

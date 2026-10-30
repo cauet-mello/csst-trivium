@@ -16,7 +16,7 @@ import { FLOW, PRIORITIES, STATUSES, isOverdue, priorityLabel, statusLabel } fro
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/chamados/$id")({
-  head: () => ({ meta: [{ title: "Detalhe do chamado — Trivium SST" }, { name: "description", content: "Linha do tempo e histórico do chamado." }, { property: "og:title", content: "Detalhe do chamado — Trivium SST" }, { property: "og:description", content: "Linha do tempo e histórico do chamado." }] }),
+  head: () => ({ meta: [{ title: "Detalhe do chamado — Trivium SST" }, { name: "description", content: "Linha do tempo e histórico do chamado." }, { property: "og:title", content: "Detalhe do chamado — Trivium SST" }, { property: "og:description", content: "Linha do tempo e histórico do chamado." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Detalhe,
 });
 
