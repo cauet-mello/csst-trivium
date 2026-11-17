@@ -11,3 +11,4 @@
 
 - Keep password sign-in and administrative-role resolution in the browser-safe login helper so access failures can be tested independently of the form.
 - Initial staff provisioning requires an authenticated staff caller; never expose privileged account creation as an anonymous server function.
+- Routing-rule reads expose only active guidance to authenticated requesters; inactive rules and SLA settings remain staff-only so the assistant works without exposing administrative configuration.

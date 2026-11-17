@@ -1,0 +1,1 @@
+ALTER POLICY "read" ON public.sla_settings TO authenticated USING (public.is_staff(auth.uid()));

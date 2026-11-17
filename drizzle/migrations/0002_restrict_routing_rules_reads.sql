@@ -1,0 +1,1 @@
+ALTER POLICY "read" ON public.routing_rules TO authenticated USING (active AND auth.uid() IS NOT NULL);
