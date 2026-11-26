@@ -1,0 +1,2 @@
+ALTER POLICY "read" ON public.categories TO authenticated USING (active AND auth.uid() IS NOT NULL);
+ALTER POLICY "read" ON public.departments TO authenticated USING (active AND auth.uid() IS NOT NULL);

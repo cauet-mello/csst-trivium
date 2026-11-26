@@ -8,6 +8,8 @@ import { useMe } from "@/hooks/use-me";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { readData } from "@/lib/query-result";
 
 export const Route = createFileRoute("/_authenticated/notificacoes")({
   head: () => ({ meta: [{ title: "Notificações — Trivium SST" }, { name: "description", content: "Atualizações dos seus chamados." }, { property: "og:title", content: "Notificações — Trivium SST" }, { property: "og:description", content: "Atualizações dos seus chamados." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
@@ -17,24 +19,29 @@ export const Route = createFileRoute("/_authenticated/notificacoes")({
 function Notificacoes() {
   const { data: me } = useMe();
   const qc = useQueryClient();
-  const { data: items = [] } = useQuery({
+  const { data: items = [], error: itemsError } = useQuery({
     queryKey: ["notifications", me?.id],
     enabled: !!me,
-    queryFn: async () => (await supabase.from("notifications").select("*").eq("user_id", me!.id).order("created_at", { ascending: false }).limit(100)).data ?? [],
+    queryFn: async () => me ? readData(await supabase.from("notifications").select("*").eq("user_id", me.id).order("created_at", { ascending: false }).limit(100)) ?? [] : [],
   });
   async function markAll() {
-    await supabase.from("notifications").update({ read: true }).eq("user_id", me!.id).eq("read", false);
+    if (!me) return;
+    const { error } = await supabase.from("notifications").update({ read: true }).eq("user_id", me.id).eq("read", false);
+    if (error) { toast.error("Não foi possível marcar as notificações como lidas."); return; }
     qc.invalidateQueries({ queryKey: ["notifications"] });
     qc.invalidateQueries({ queryKey: ["notif-count"] });
   }
   async function markOne(id: string) {
-    await supabase.from("notifications").update({ read: true }).eq("id", id);
+    if (!me) return;
+    const { error } = await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", me.id);
+    if (error) { toast.error("Não foi possível marcar a notificação como lida."); return; }
+    qc.invalidateQueries({ queryKey: ["notifications"] });
     qc.invalidateQueries({ queryKey: ["notif-count"] });
   }
   return (
-    <AppShell title="Notificações" actions={<Button variant="outline" size="sm" onClick={markAll}><CheckCheck /> Marcar todas como lidas</Button>}>
+    <AppShell title="Notificações" actions={<Button variant="outline" size="sm" onClick={markAll} disabled={!me || !items.some((n) => !n.read)}><CheckCheck /> Marcar todas como lidas</Button>}>
       <div className="overflow-hidden rounded-2xl bg-card shadow-card">
-        {items.length === 0 ? <p className="p-6 text-muted-foreground">Sem notificações.</p> : (
+        {itemsError ? <p role="alert" className="p-6 text-destructive">Não foi possível carregar as notificações.</p> : items.length === 0 ? <p className="p-6 text-muted-foreground">Sem notificações.</p> : (
           <ul className="divide-y">
             {items.map((n) => {
               const Icon = n.kind === "critical" ? AlertOctagon : Bell;

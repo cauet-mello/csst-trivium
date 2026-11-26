@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PriorityBadge, StatusBadge } from "@/components/badges";
 import { PRIORITIES, STATUSES, isOverdue } from "@/lib/domain";
+import { readData } from "@/lib/query-result";
 
 export const Route = createFileRoute("/_authenticated/chamados/")({
   head: () => ({ meta: [{ title: "Chamados — Trivium SST" }, { name: "description", content: "Consulta e histórico de chamados." }, { property: "og:title", content: "Chamados — Trivium SST" }, { property: "og:description", content: "Consulta e histórico de chamados." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
@@ -23,13 +24,14 @@ function Lista() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [prio, setPrio] = useState("all");
-  const { data: tickets = [], isLoading } = useQuery({
+  const { data: tickets = [], isLoading, error } = useQuery({
     queryKey: ["tickets", me?.id, me?.isStaff],
     enabled: !!me,
     queryFn: async () => {
+      if (!me) return [];
       let qb = supabase.from("tickets").select("id, protocol, title, status, priority, department, requester_name, assignee_name, created_at, due_at, closed_at").order("created_at", { ascending: false }).limit(1000);
-      if (!me!.isStaff) qb = qb.eq("requester_id", me!.id);
-      return (await qb).data ?? [];
+      if (!me.isStaff) qb = qb.eq("requester_id", me.id);
+      return readData(await qb) ?? [];
     },
   });
   const rows = useMemo(() => {
@@ -57,7 +59,7 @@ function Lista() {
         </Select>
       </div>
       <div className="overflow-hidden rounded-2xl bg-card shadow-card">
-        {isLoading ? <p className="p-6 text-muted-foreground">Carregando…</p> : rows.length === 0 ? <p className="p-6 text-muted-foreground">Nenhum chamado encontrado.</p> : (
+        {error ? <p role="alert" className="p-6 text-destructive">Não foi possível carregar os chamados. Atualize a página para tentar novamente.</p> : isLoading ? <p className="p-6 text-muted-foreground">Carregando…</p> : rows.length === 0 ? <p className="p-6 text-muted-foreground">Nenhum chamado encontrado.</p> : (
           <ul className="divide-y">
             {rows.map((t) => (
               <li key={t.id}>

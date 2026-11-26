@@ -12,3 +12,6 @@
 - Keep password sign-in and administrative-role resolution in the browser-safe login helper so access failures can be tested independently of the form.
 - Initial staff provisioning requires an authenticated staff caller; never expose privileged account creation as an anonymous server function.
 - Routing-rule reads expose only active guidance to authenticated requesters; inactive rules and SLA settings remain staff-only so the assistant works without exposing administrative configuration.
+- Share attachment validation and saving across creation and detail views so upload failures never appear successful.
+- Use readData for database reads so permission and network failures are not presented as empty results.
+- Account mutations authorize both the caller and protected target through ensureStaff; role replacement is atomic to avoid losing access on failure.

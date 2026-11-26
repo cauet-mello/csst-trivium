@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Role } from "@/lib/domain";
+import { readData } from "@/lib/query-result";
 
 export type Me = {
   id: string;
@@ -19,10 +20,12 @@ export function useMe() {
     queryFn: async (): Promise<Me | null> => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
-      const [{ data: p }, { data: r }] = await Promise.all([
+      const [profile, roleResult] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", u.user.id).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", u.user.id),
       ]);
+      const p = readData(profile);
+      const r = readData(roleResult);
       const roles = (r ?? []).map((x) => x.role as Role);
       return {
         id: u.user.id,

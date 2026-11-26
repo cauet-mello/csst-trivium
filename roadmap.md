@@ -1,11 +1,11 @@
 # Roadmap — Trivium Chamados SST
-- [ ] Corrigir erros reproduzíveis de funcionamento, acesso, exportação e segurança; validar testes e navegação
+- [x] Corrigir erros reproduzíveis de funcionamento, acesso, exportação e segurança; validar testes e navegação
 - [x] Verificar login de Cauet nos modos administrador e solicitante, atualização da página, saída, senha inválida e bloqueio sem sessão
-- [ ] Backend (Lovable Cloud): perfis, papéis, chamados, histórico, notificações, categorias, setores
+- [x] Backend (Lovable Cloud): perfis, papéis, chamados, histórico, notificações, categorias, setores
 - [ ] Senha inicial de Ederson: aguarda substituição da senha rejeitada por ser fraca
-- [ ] Abertura de chamado + assistente IA (triagem, setor, prioridade)
-- [ ] Lista/detalhe com linha do tempo e histórico imutável
-- [ ] Dashboard com indicadores, filtros, exportação Excel/PDF
-- [ ] Painel admin (usuários, categorias, setores, regras IA, prazos)
-- [ ] Notificações internas
+- [x] Abertura de chamado + assistente IA (triagem, setor, prioridade)
+- [x] Lista/detalhe com linha do tempo e histórico imutável
+- [x] Dashboard com indicadores, filtros, exportação Excel/PDF
+- [ ] Painel admin (usuários, categorias, setores, regras IA, prazos): entrega de novas telas fora desta correção; funções de contas protegidas
+- [x] Notificações internas
 - Nota: NÃO usar Lista_de_Clientes_e_Fornecedores.docx (cancelado pelo usuário)

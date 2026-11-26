@@ -414,6 +414,14 @@ export type Database = {
         Args: { _body: string; _kind: string; _ticket: string; _title: string }
         Returns: undefined
       }
+      replace_app_user_role: {
+        Args: {
+          _actor_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _target_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "developer" | "requester"

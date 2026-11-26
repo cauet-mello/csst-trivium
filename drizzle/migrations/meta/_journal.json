@@ -22,6 +22,20 @@
       "when": 1794924151471,
       "tag": "0002_restrict_routing_rules_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795699392951,
+      "tag": "0003_restrict_inactive_catalog_reads",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795699499819,
+      "tag": "0004_atomic_staff_role_replacement",
+      "breakpoints": true
     }
   ]
 }

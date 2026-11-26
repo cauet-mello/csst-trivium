@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PriorityBadge, StatusBadge } from "@/components/badges";
 import { FLOW, PRIORITIES, STATUSES, isOverdue, priorityLabel, statusLabel } from "@/lib/domain";
 import { cn } from "@/lib/utils";
+import { saveTicketAttachment } from "@/lib/attachments";
+import { readData } from "@/lib/query-result";
 
 export const Route = createFileRoute("/_authenticated/chamados/$id")({
   head: () => ({ meta: [{ title: "Detalhe do chamado — Trivium SST" }, { name: "description", content: "Linha do tempo e histórico do chamado." }, { property: "og:title", content: "Detalhe do chamado — Trivium SST" }, { property: "og:description", content: "Linha do tempo e histórico do chamado." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
@@ -26,19 +28,20 @@ function Detalhe() {
   const { id } = Route.useParams();
   const { data: me } = useMe();
   const qc = useQueryClient();
-  const { data: t } = useQuery({ queryKey: ["ticket", id], queryFn: async () => (await supabase.from("tickets").select("*").eq("id", id).maybeSingle()).data });
-  const { data: events = [] } = useQuery({ queryKey: ["events", id], queryFn: async () => (await supabase.from("ticket_events").select("*").eq("ticket_id", id).order("created_at")).data ?? [] });
-  const { data: atts = [] } = useQuery({ queryKey: ["atts", id], queryFn: async () => (await supabase.from("ticket_attachments").select("*").eq("ticket_id", id).order("created_at")).data ?? [] });
+  const { data: t, isPending, error: ticketError, refetch } = useQuery({ queryKey: ["ticket", id], queryFn: async () => readData(await supabase.from("tickets").select("*").eq("id", id).maybeSingle()) });
+  const { data: events = [], error: eventsError } = useQuery({ queryKey: ["events", id], queryFn: async () => readData(await supabase.from("ticket_events").select("*").eq("ticket_id", id).order("created_at")) ?? [] });
+  const { data: atts = [], error: attsError } = useQuery({ queryKey: ["atts", id], queryFn: async () => readData(await supabase.from("ticket_attachments").select("*").eq("ticket_id", id).order("created_at")) ?? [] });
   const { data: staff = [] } = useQuery({
     queryKey: ["staff-users"],
     enabled: !!me?.isStaff,
     queryFn: async () => {
-      const { data: r } = await supabase.from("user_roles").select("user_id").in("role", ["admin", "developer"]);
+      const r = readData(await supabase.from("user_roles").select("user_id").in("role", ["admin", "developer"]));
       const ids = (r ?? []).map((x) => x.user_id);
-      return (await supabase.from("profiles").select("id, full_name, username").in("id", ids)).data ?? [];
+      if (!ids.length) return [];
+      return readData(await supabase.from("profiles").select("id, full_name, username").eq("active", true).in("id", ids)) ?? [];
     },
   });
-  const { data: deps = [] } = useQuery({ queryKey: ["departments"], enabled: !!me?.isStaff, queryFn: async () => (await supabase.from("departments").select("*").eq("active", true).order("name")).data ?? [] });
+  const { data: deps = [] } = useQuery({ queryKey: ["departments"], enabled: !!me?.isStaff, queryFn: async () => readData(await supabase.from("departments").select("*").eq("active", true).order("name")) ?? [] });
   const [comment, setComment] = useState("");
   const [solution, setSolution] = useState("");
   const [busy, setBusy] = useState(false);
@@ -47,43 +50,54 @@ function Detalhe() {
     qc.invalidateQueries({ queryKey: ["ticket", id] });
     qc.invalidateQueries({ queryKey: ["events", id] });
     qc.invalidateQueries({ queryKey: ["tickets"] });
+    qc.invalidateQueries({ queryKey: ["my-tickets"] });
+    qc.invalidateQueries({ queryKey: ["my-ticket-counts"] });
+    qc.invalidateQueries({ queryKey: ["dash-tickets"] });
+    qc.invalidateQueries({ queryKey: ["notifications"] });
+    qc.invalidateQueries({ queryKey: ["notif-count"] });
   };
 
   async function update(patch: any, okMsg: string) {
+    if (busy || !me?.isStaff) return;
     setBusy(true);
-    const { error } = await supabase.from("tickets").update(patch).eq("id", id);
-    setBusy(false);
-    if (error) { toast.error("Não foi possível atualizar."); return; }
+    try {
+    const { data: updated, error } = await supabase.from("tickets").update(patch).eq("id", id).select("id").single();
+    if (error || !updated) { toast.error("Não foi possível atualizar."); return; }
     toast.success(okMsg);
     refresh();
+    return true;
+    } catch { toast.error("Não foi possível atualizar."); return false; }
+    finally { setBusy(false); }
   }
 
   async function addComment() {
-    if (!comment.trim()) return;
-    const { error } = await supabase.from("ticket_events").insert({ ticket_id: id, actor_id: me!.id, actor_name: me!.full_name || me!.username, event_type: "comment", note: comment.trim().slice(0, 3000) });
+    if (!comment.trim() || !me || busy) return;
+    const { error } = await supabase.from("ticket_events").insert({ ticket_id: id, actor_id: me.id, actor_name: me.full_name || me.username, event_type: "comment", note: comment.trim().slice(0, 3000) });
     if (error) { toast.error("Falha ao adicionar informação."); return; }
     setComment("");
     refresh();
   }
 
   async function upload(files: FileList | null) {
-    if (!files) return;
+    if (!files || !me) return;
+    let succeeded = 0;
     for (const file of Array.from(files)) {
-      const path = `${me!.id}/${id}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-      const up = await supabase.storage.from("attachments").upload(path, file);
-      if (up.error) { toast.error(`Falha ao enviar ${file.name}`); continue; }
-      await supabase.from("ticket_attachments").insert({ ticket_id: id, uploaded_by: me!.id, file_name: file.name, storage_path: path, mime_type: file.type, size_bytes: file.size });
+      try { await saveTicketAttachment(file, me.id, id); succeeded++; }
+      catch (error) { toast.error(error instanceof Error ? error.message : `Falha ao enviar ${file.name}`); }
     }
     qc.invalidateQueries({ queryKey: ["atts", id] });
-    toast.success("Anexo(s) adicionado(s)");
+    if (succeeded) toast.success(`${succeeded} anexo(s) adicionado(s)`);
   }
 
   async function openAtt(path: string) {
-    const { data } = await supabase.storage.from("attachments").createSignedUrl(path, 120);
-    if (data) window.open(data.signedUrl, "_blank", "noopener");
+    const { data, error } = await supabase.storage.from("attachments").createSignedUrl(path, 120);
+    if (error || !data) { toast.error("Não foi possível abrir o anexo."); return; }
+    window.open(data.signedUrl, "_blank", "noopener");
   }
 
-  if (!t) return <AppShell title="Chamado"><p className="text-muted-foreground">Carregando…</p></AppShell>;
+  if (isPending) return <AppShell title="Chamado"><p className="text-muted-foreground">Carregando…</p></AppShell>;
+  if (ticketError) return <AppShell title="Chamado"><p role="alert">Não foi possível carregar este chamado.</p><Button onClick={() => refetch()}>Tentar novamente</Button></AppShell>;
+  if (!t) return <AppShell title="Chamado não encontrado"><p>O chamado não existe ou você não tem acesso a ele.</p><Button asChild variant="outline" className="mt-4"><Link to="/chamados">Voltar aos chamados</Link></Button></AppShell>;
   const flowIdx = FLOW.indexOf(t.status as any);
 
   return (
@@ -142,6 +156,7 @@ function Detalhe() {
 
           <section className="rounded-2xl bg-card p-5 shadow-card">
             <h2 className="mb-4 font-semibold text-primary-deep">Histórico</h2>
+            {eventsError && <p role="alert" className="text-sm text-destructive">Não foi possível carregar o histórico.</p>}
             <ol className="relative space-y-5 border-l-2 border-border pl-6">
               {events.map((e) => (
                 <li key={e.id} className="relative">
@@ -200,7 +215,7 @@ function Detalhe() {
               <div className="space-y-1.5">
                 <Label>Solução aplicada</Label>
                 <Textarea rows={3} value={solution} onChange={(e) => setSolution(e.target.value)} placeholder={t.solution ?? "Descreva a solução"} />
-                <Button size="sm" variant="outline" className="w-full" disabled={!solution.trim() || busy} onClick={() => { update({ solution: solution.trim() }, "Solução registrada"); setSolution(""); }}>
+                <Button size="sm" variant="outline" className="w-full" disabled={!solution.trim() || busy} onClick={async () => { if (await update({ solution: solution.trim() }, "Solução registrada")) setSolution(""); }}>
                   {busy && <Loader2 className="animate-spin" />} Salvar solução
                 </Button>
               </div>
@@ -208,10 +223,11 @@ function Detalhe() {
           )}
           <section className="rounded-2xl bg-card p-5 shadow-card">
             <h2 className="mb-3 font-semibold text-primary-deep">Anexos</h2>
+            {attsError && <p role="alert" className="text-sm text-destructive">Não foi possível carregar os anexos.</p>}
             {atts.length === 0 && <p className="text-sm text-muted-foreground">Nenhum anexo.</p>}
             <ul className="space-y-2">
               {atts.map((a) => (
-                <li key={a.id}><button onClick={() => openAtt(a.storage_path)} className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm hover:bg-muted"><FileText className="size-4 text-primary" /><span className="truncate">{a.file_name}</span></button></li>
+                <li key={a.id}><Button variant="ghost" onClick={() => openAtt(a.storage_path)} className="w-full justify-start text-left"><FileText className="size-4 text-primary" /><span className="truncate">{a.file_name}</span></Button></li>
               ))}
             </ul>
             <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed p-2 text-sm text-muted-foreground hover:bg-muted/50">

@@ -14,7 +14,8 @@ export const triageTicket = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { runTriage, buildSystemPrompt } = await import("./ai.server");
-    const { data: rules } = await context.supabase.from("routing_rules").select("topic, department, involves_safety, notes").eq("active", true);
+    const { data: rules, error: rulesError } = await context.supabase.from("routing_rules").select("topic, department, involves_safety, notes").eq("active", true);
+    if (rulesError) return { ok: false as const, error: "Não foi possível carregar as orientações. Você pode registrar o chamado para análise humana." };
     const system = buildSystemPrompt(rules ?? []);
     const input = `Título: ${data.title}\nCategoria: ${data.category}\nLocal: ${data.location}\nDescrição: ${data.description}`;
     try {

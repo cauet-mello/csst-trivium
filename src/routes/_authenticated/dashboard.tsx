@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PriorityBadge } from "@/components/badges";
 import { PRIORITIES, STATUSES, isOverdue, priorityLabel, statusLabel, OPEN_STATUSES } from "@/lib/domain";
 import mascot from "@/assets/mascote_trivium_sem_fundo.png.asset.json";
+import { readData } from "@/lib/query-result";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Trivium SST" }, { name: "description", content: "Indicadores de chamados de Segurança do Trabalho." }, { property: "og:title", content: "Dashboard — Trivium SST" }, { property: "og:description", content: "Indicadores de chamados de Segurança do Trabalho." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
@@ -32,11 +33,11 @@ function Dashboard() {
   const [fResp, setFResp] = useState("all");
   const [fReq, setFReq] = useState("all");
 
-  const { data: all = [] } = useQuery({
-    queryKey: ["dash-tickets"],
+  const { data: all = [], error: dataError, isPending: loadingTickets } = useQuery({
+    queryKey: ["dash-tickets", me?.id],
     enabled: !!me?.isStaff,
     refetchInterval: 30_000,
-    queryFn: async () => (await supabase.from("tickets").select("*").order("created_at", { ascending: false }).limit(5000)).data ?? [],
+    queryFn: async () => readData(await supabase.from("tickets").select("*").order("created_at", { ascending: false }).limit(5000)) ?? [],
   });
 
   const uniq = (k: "department" | "category" | "assignee_name" | "requester_name") => Array.from(new Set(all.map((t) => t[k]).filter(Boolean))) as string[];
@@ -51,8 +52,8 @@ function Dashboard() {
 
   const k = useMemo(() => {
     const count = (fn: (t: (typeof data)[number]) => boolean) => data.filter(fn).length;
-    const resp = data.filter((t) => t.received_at).map((t) => hours(t.created_at, t.received_at!));
-    const reso = data.filter((t) => t.closed_at && t.status === "concluido").map((t) => hours(t.created_at, t.closed_at!));
+    const resp = data.flatMap((t) => t.received_at ? [hours(t.created_at, t.received_at)] : []);
+    const reso = data.flatMap((t) => t.closed_at && t.status === "concluido" ? [hours(t.created_at, t.closed_at)] : []);
     const avg = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
     const group = (key: "department" | "category" | "requester_name") => {
       const m = new Map<string, number>();
@@ -86,6 +87,7 @@ function Dashboard() {
     }));
   }
   async function exportXlsx() {
+    if (!me?.isStaff || dataError || loadingTickets) return;
     const XLSX = await import("xlsx");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsForExport()), "Chamados");
@@ -98,6 +100,7 @@ function Dashboard() {
     XLSX.writeFile(wb, `chamados-sst-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`);
   }
   async function exportPdf() {
+    if (!me?.isStaff || dataError || loadingTickets) return;
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
     const doc = new jsPDF({ orientation: "landscape" });
@@ -112,7 +115,10 @@ function Dashboard() {
     doc.save(`chamados-sst-${format(new Date(), "yyyyMMdd-HHmm")}.pdf`);
   }
 
-  if (me && !me.isStaff) return <AppShell title="Dashboard"><p>Acesso restrito à administração.</p></AppShell>;
+  if (!me) return <AppShell title="Dashboard"><p>Carregando acesso…</p></AppShell>;
+  if (!me.isStaff) return <AppShell title="Dashboard"><p>Acesso restrito à administração.</p></AppShell>;
+  if (dataError) return <AppShell title="Dashboard"><p role="alert">Não foi possível carregar os indicadores. Atualize a página para tentar novamente.</p></AppShell>;
+  if (loadingTickets) return <AppShell title="Dashboard"><p>Carregando indicadores…</p></AppShell>;
 
   const F = ({ v, set, ph, opts }: { v: string; set: (s: string) => void; ph: string; opts: { value: string; label: string }[] }) => (
     <Select value={v} onValueChange={set}>
@@ -170,7 +176,7 @@ function Dashboard() {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Chart title="Chamados por prioridade">
           <BarChart data={k.porPrioridade}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="name" fontSize={12} /><YAxis allowDecimals={false} fontSize={12} /><Tooltip />
-            <Bar dataKey="value" name="Chamados" radius={[6, 6, 0, 0]}>{k.porPrioridade.map((p) => <Cell key={p.key} fill={PCOLOR[p.key]!} />)}</Bar></BarChart>
+            <Bar dataKey="value" name="Chamados" radius={[6, 6, 0, 0]}>{k.porPrioridade.map((p) => <Cell key={p.key} fill={PCOLOR[p.key] ?? "var(--chart-1)"} />)}</Bar></BarChart>
         </Chart>
         <Chart title="Evolução de abertura">
           <LineChart data={k.linha}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="name" fontSize={12} /><YAxis allowDecimals={false} fontSize={12} /><Tooltip /><Line type="monotone" dataKey="value" name="Chamados" stroke="var(--chart-1)" strokeWidth={2.5} dot={false} /></LineChart>

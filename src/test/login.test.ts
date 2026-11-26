@@ -45,6 +45,7 @@ describe("Password access", () => {
   it("rejects a failed role lookup instead of returning a destination", async () => {
     mocks.roles.mockResolvedValue({ data: null, error: { message: "lookup failed" } });
     await expect(signInToApp("cauet.mello", "test-password", "admin")).rejects.toThrow();
+    expect(mocks.signOut).toHaveBeenCalledOnce();
   });
 
   it("rejects invalid credentials before querying roles", async () => {

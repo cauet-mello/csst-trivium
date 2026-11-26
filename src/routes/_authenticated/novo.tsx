@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PriorityBadge } from "@/components/badges";
 import { PRIORITIES, type Priority } from "@/lib/domain";
 import { triageTicket } from "@/lib/ai.functions";
+import { saveTicketAttachment, validateAttachment } from "@/lib/attachments";
+import { readData } from "@/lib/query-result";
 
 export const Route = createFileRoute("/_authenticated/novo")({
   head: () => ({ meta: [{ title: "Abrir chamado — Trivium SST" }, { name: "description", content: "Registre um novo chamado de Segurança do Trabalho." }, { property: "og:title", content: "Abrir chamado — Trivium SST" }, { property: "og:description", content: "Registre um novo chamado de Segurança do Trabalho." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
@@ -52,8 +54,8 @@ function NovoChamado() {
     if (me) setF((s) => ({ ...s, requester_name: s.requester_name || me.full_name, registration: s.registration || me.registration || "", department: s.department || me.department || "" }));
   }, [me]);
 
-  const { data: cats = [] } = useQuery({ queryKey: ["categories"], queryFn: async () => (await supabase.from("categories").select("*").eq("active", true).order("name")).data ?? [] });
-  const { data: deps = [] } = useQuery({ queryKey: ["departments"], queryFn: async () => (await supabase.from("departments").select("*").eq("active", true).order("name")).data ?? [] });
+  const { data: cats = [], error: catsError } = useQuery({ queryKey: ["categories"], queryFn: async () => readData(await supabase.from("categories").select("*").eq("active", true).order("name")) ?? [] });
+  const { data: deps = [], error: depsError } = useQuery({ queryKey: ["departments"], queryFn: async () => readData(await supabase.from("departments").select("*").eq("active", true).order("name")) ?? [] });
 
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((s) => ({ ...s, [k]: e.target.value }));
 
@@ -69,6 +71,11 @@ function NovoChamado() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
+    if (!me) { toast.error("Aguarde o carregamento da sua conta e tente novamente."); return; }
+    try { files.forEach(validateAttachment); } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Verifique os anexos."); return;
+    }
     const parsed = schema.safeParse(f);
     if (!parsed.success) {
       const errs: Record<string, string> = {};
@@ -78,11 +85,12 @@ function NovoChamado() {
     }
     setErrors({});
     setSaving(true);
+    try {
     const v = parsed.data;
     const { data: t, error } = await supabase
       .from("tickets")
       .insert({
-        requester_id: me!.id, requester_name: v.requester_name, registration: v.registration, department: v.department,
+        requester_id: me.id, requester_name: v.requester_name, registration: v.registration, department: v.department,
         location: v.location, category: v.category, title: v.title, description: v.description, observations: v.observations || null,
         priority,
         ai_suggested_priority: ai?.suggested_priority ?? null,
@@ -97,21 +105,26 @@ function NovoChamado() {
       setSaving(false);
       { toast.error("Não foi possível registrar o chamado."); return; }
     }
+    let failedAttachments = 0;
     for (const file of files) {
-      const path = `${me!.id}/${t.id}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-      const up = await supabase.storage.from("attachments").upload(path, file);
-      if (!up.error) await supabase.from("ticket_attachments").insert({ ticket_id: t.id, uploaded_by: me!.id, file_name: file.name, storage_path: path, mime_type: file.type, size_bytes: file.size });
+      try { await saveTicketAttachment(file, me.id, t.id); }
+      catch { failedAttachments++; }
     }
     toast.success(`Chamado ${t.protocol} registrado!`);
-    navigate({ to: "/chamados/$id", params: { id: t.id } });
+    if (failedAttachments) toast.error(`${failedAttachments} anexo(s) não foram enviados. O chamado foi salvo; tente anexá-los novamente no detalhe.`);
+    await navigate({ to: "/chamados/$id", params: { id: t.id } });
+    } catch {
+      toast.error("Não foi possível registrar o chamado. Tente novamente.");
+    } finally { setSaving(false); }
   }
 
   const Err = ({ k }: { k: string }) => (errors[k] ? <p className="text-xs text-destructive">{errors[k]}</p> : null);
 
   return (
     <AppShell title="Abrir chamado" subtitle="Preencha as informações. Campos com * são obrigatórios.">
-      <div className="grid gap-6 xl:grid-cols-[1fr_400px]">
-        <form onSubmit={submit} className="space-y-6 rounded-2xl bg-card p-5 shadow-card md:p-7">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+        <form onSubmit={submit} className="min-w-0 space-y-6 rounded-2xl bg-card p-5 shadow-card md:p-7">
+          {(catsError || depsError) && <p role="alert" className="text-sm text-destructive">Não foi possível carregar as opções. Atualize a página para tentar novamente.</p>}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Nome do colaborador *"><Input value={f.requester_name} onChange={set("requester_name")} /><Err k="requester_name" /></Field>
             <Field label="Matrícula *"><Input value={f.registration} onChange={set("registration")} /><Err k="registration" /></Field>
@@ -183,10 +196,10 @@ function NovoChamado() {
             </label>
           </Field>
           <div className="flex justify-end">
-            <Button type="submit" size="lg" disabled={saving}>{saving && <Loader2 className="animate-spin" />} Registrar chamado</Button>
+            <Button type="submit" size="lg" disabled={saving || !me || !!catsError || !!depsError}>{saving && <Loader2 className="animate-spin" />} Registrar chamado</Button>
           </div>
         </form>
-        <div className="xl:sticky xl:top-24 xl:self-start"><AiAssistant /></div>
+        <div className="min-w-0 xl:sticky xl:top-24 xl:self-start"><AiAssistant /></div>
       </div>
     </AppShell>
   );

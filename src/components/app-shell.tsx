@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import logo from "@/assets/logo-trivium.png.asset.json";
 import symbolWhite from "@/assets/simbolo-branco.png.asset.json";
+import { readData } from "@/lib/query-result";
 
 const NAV = [
   { to: "/painel", label: "Início", icon: Home, staff: false },
@@ -50,9 +51,10 @@ function SidebarBody({ onNav }: { onNav?: (() => void) | undefined }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   async function signOut() {
+    const { error } = await supabase.auth.signOut();
+    if (error) { toast.error("Não foi possível sair. Tente novamente."); return; }
     await qc.cancelQueries();
     qc.clear();
-    await supabase.auth.signOut();
     navigate({ to: "/", replace: true });
   }
   return (
@@ -68,9 +70,9 @@ function SidebarBody({ onNav }: { onNav?: (() => void) | undefined }) {
       <div className="mt-auto rounded-xl bg-sidebar-accent p-3">
         <div className="truncate text-sm font-semibold text-sidebar-accent-foreground">{me?.full_name || me?.username}</div>
         <div className="text-xs text-sidebar-foreground/70">{me?.roles.map((r) => ROLE_LABEL[r]).join(", ")}</div>
-        <button onClick={signOut} className="mt-3 flex items-center gap-2 text-xs font-medium text-sidebar-primary hover:underline">
+        <Button variant="ghost" size="sm" onClick={signOut} className="mt-3 h-auto justify-start p-0 text-xs font-medium text-sidebar-primary hover:underline">
           <LogOut className="size-3.5" /> Sair
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -83,8 +85,10 @@ function Bellbutton() {
     queryKey: ["notif-count", me?.id],
     enabled: !!me,
     queryFn: async () => {
-      const { count } = await supabase.from("notifications").select("id", { count: "exact", head: true }).eq("read", false).eq("user_id", me!.id);
-      return count ?? 0;
+      if (!me) return 0;
+      const result = await supabase.from("notifications").select("id", { count: "exact", head: true }).eq("read", false).eq("user_id", me.id);
+      readData(result);
+      return result.count ?? 0;
     },
   });
   useEffect(() => {
@@ -115,6 +119,7 @@ function Bellbutton() {
 
 export function AppShell({ title, subtitle, actions, children }: { title: string; subtitle?: string; actions?: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const { error: accountError, refetch } = useMe();
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
       <aside className="sticky top-0 hidden h-screen lg:block">
@@ -142,7 +147,7 @@ export function AppShell({ title, subtitle, actions, children }: { title: string
             <h1 className="text-2xl font-bold text-primary-deep md:text-3xl">{title}</h1>
             {subtitle && <p className="mt-1 text-muted-foreground">{subtitle}</p>}
           </div>
-          {children}
+          {accountError ? <div role="alert"><p>Não foi possível carregar seu acesso.</p><Button variant="outline" className="mt-3" onClick={() => refetch()}>Tentar novamente</Button></div> : children}
         </main>
       </div>
     </div>
