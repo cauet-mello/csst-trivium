@@ -93,22 +93,23 @@ export const deleteAppUser = createServerFn({ method: 'POST' }).middleware([requ
   });
 
 // One-time authenticated handover, never an anonymous provisioning endpoint.
-export const centralizeAdministrator = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+export const centralizeAdministrator = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ password: accountPassword }).parse(d)).handler(async ({ data, context }) => {
   const actor = readData(await context.supabase.from('profiles').select('username,active,must_change_password').eq('id', context.userId).single());
   const roles = readData(await context.supabase.from('user_roles').select('role').eq('user_id', context.userId)) ?? [];
   if (!actor?.active || actor.must_change_password || actor.username !== 'cauet.mello' || !roles.some(r => r.role === 'developer')) throw new Error('Acesso negado.');
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
   const existing = readData(await supabaseAdmin.from('profiles').select('id').eq('username', 'administrador').maybeSingle());
   if (existing) throw new Error('A centralização já foi executada.');
-  const password = process.env['ADMIN_PRIMARY_PASSWORD'];
-  if (!password) throw new Error('A senha inicial não foi configurada.');
+  // Temporary password exists only in the request; Administrador must replace it on first login.
+  const password = data.password;
   const created = await supabaseAdmin.auth.admin.createUser({ email: usernameToEmail('administrador'), password, email_confirm: true, user_metadata: { username: 'administrador', full_name: 'Administrador' } });
   if (created.error || !created.data.user) {
     console.error('Administrator handover rejected', { code: created.error?.code, status: created.error?.status });
-    throw new Error(created.error?.code === 'weak_password' ? 'A senha inicial foi rejeitada pela proteção de senhas. Cadastre uma senha mais forte para o Administrador. As contas antigas foram preservadas.' : 'A criação do Administrador falhou. As contas antigas foram preservadas.');
+    throw new Error(created.error?.code === 'weak_password' ? 'Esta senha aparece em vazamentos conhecidos ou é fraca. Escolha outra. As contas antigas foram preservadas.' : 'A criação do Administrador falhou. As contas antigas foram preservadas.');
   }
   const id = created.data.user.id;
-  const p = await supabaseAdmin.from('profiles').insert({ id, username: 'administrador', full_name: 'Administrador' });
+  const p = await supabaseAdmin.from('profiles').insert({ id, username: 'administrador', full_name: 'Administrador', must_change_password: true });
   const r = p.error ? p : await supabaseAdmin.from('user_roles').insert({ user_id: id, role: 'admin' });
   if (r.error) { await supabaseAdmin.auth.admin.deleteUser(id); throw new Error('Não foi possível configurar o Administrador. As contas antigas foram preservadas.'); }
   await audit(supabaseAdmin, context.userId, id, 'administrador', 'centralized');
