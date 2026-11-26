@@ -2,12 +2,12 @@
 - [x] Corrigir erros reproduzíveis de funcionamento, acesso, exportação e segurança; validar testes e navegação
 - [x] Verificar login de Cauet nos modos administrador e solicitante, atualização da página, saída, senha inválida e bloqueio sem sessão
 - [x] Backend (Lovable Cloud): perfis, papéis, chamados, histórico, notificações, categorias, setores
-- [ ] Centralizar acesso na conta Administrador e retirar credenciais de Cauet e Ederson, preservando chamados
-- [ ] Gestão de Usuários: cadastro, senhas temporárias, troca obrigatória, redefinição, ativação, exclusão e auditoria
-- [ ] Validar acesso administrativo e operacional, bloqueios e gestão de contas
+- [ ] Centralizar acesso na conta Administrador e retirar credenciais de Cauet e Ederson: bloqueado pela rejeição da senha inicial (weak_password); senha forte em ADMIN_PRIMARY_PASSWORD necessária. Transição autenticada pronta, dados preservados.
+- [x] Gestão de Usuários: cadastro, senhas temporárias, troca obrigatória, redefinição, ativação, exclusão e auditoria
+- [x] Validar gestão com administrador temporário: cadastro, duplicidade, senha pessoal, senha anterior inválida, redefinição, bloqueio administrativo, ativação, exclusão e auditoria; celular sem overflow
 - [x] Abertura de chamado + assistente IA (triagem, setor, prioridade)
 - [x] Lista/detalhe com linha do tempo e histórico imutável
 - [x] Dashboard com indicadores, filtros, exportação Excel/PDF
-- [ ] Painel admin (usuários, categorias, setores, regras IA, prazos): entrega de novas telas fora desta correção; funções de contas protegidas
+- [ ] Painel admin (categorias, setores, regras IA, prazos): fora do escopo da reestruturação de autenticação; Gestão de Usuários entregue
 - [x] Notificações internas
 - Nota: NÃO usar Lista_de_Clientes_e_Fornecedores.docx (cancelado pelo usuário)

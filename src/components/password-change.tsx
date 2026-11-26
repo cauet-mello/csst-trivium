@@ -10,6 +10,7 @@ import { changeInitialPassword } from '@/lib/account.functions';
 import { accountPassword } from '@/lib/account-rules';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-trivium.png.asset.json';
+import { toast } from 'sonner';
 
 export function PasswordChangeForm() {
   const change = useServerFn(changeInitialPassword);
@@ -33,6 +34,8 @@ export function PasswordChangeForm() {
       await qc.cancelQueries(); qc.clear();
       await supabase.auth.signOut();
       setCurrent(''); setPassword(''); setConfirm(''); setDone(true);
+      toast.success('Senha alterada. Entre com sua nova senha pessoal.');
+      await navigate({ to: '/', replace: true });
     } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível alterar a senha.'); }
     finally { setBusy(false); }
   }

@@ -50,6 +50,13 @@
       "when": 1795700658323,
       "tag": "0006_allow_ready_administrators_application_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795701255610,
+      "tag": "0007_preserve_legacy_access_until_administrator_handover",
+      "breakpoints": true
     }
   ]
 }
