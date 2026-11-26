@@ -117,6 +117,7 @@ function Dashboard() {
 
   if (!me) return <AppShell title="Dashboard"><p>Carregando acesso…</p></AppShell>;
   if (!me.isStaff) return <AppShell title="Dashboard"><p>Acesso restrito à administração.</p></AppShell>;
+  const capped = all.length >= 5000;
   if (dataError) return <AppShell title="Dashboard"><p role="alert">Não foi possível carregar os indicadores. Atualize a página para tentar novamente.</p></AppShell>;
   if (loadingTickets) return <AppShell title="Dashboard"><p>Carregando indicadores…</p></AppShell>;
 
@@ -130,6 +131,7 @@ function Dashboard() {
 
   return (
     <AppShell title="Dashboard gerencial" actions={<><Button variant="outline" size="sm" onClick={exportXlsx}><FileSpreadsheet /> Excel</Button><Button variant="outline" size="sm" onClick={exportPdf}><Download /> PDF</Button></>}>
+      {capped && <p className="mb-3 text-sm text-muted-foreground">Os indicadores consideram os 5000 chamados mais recentes.</p>}
       <div className="relative mb-6 overflow-hidden rounded-2xl bg-hero p-6 text-primary-foreground shadow-card">
         <p className="text-sm opacity-80">Segurança do Trabalho · Trivium Indústrias</p>
         <p className="mt-1 font-display text-2xl font-bold">{k.total} chamados no período</p>

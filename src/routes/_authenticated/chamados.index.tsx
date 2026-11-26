@@ -58,6 +58,7 @@ function Lista() {
           <SelectContent><SelectItem value="all">Todas prioridades</SelectItem>{PRIORITIES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
         </Select>
       </div>
+      {tickets.length >= 1000 && <p className="mb-3 text-sm text-muted-foreground">Mostrando os 1000 chamados mais recentes. Chamados mais antigos não aparecem nesta lista.</p>}
       <div className="overflow-hidden rounded-2xl bg-card shadow-card">
         {error ? <p role="alert" className="p-6 text-destructive">Não foi possível carregar os chamados. Atualize a página para tentar novamente.</p> : isLoading ? <p className="p-6 text-muted-foreground">Carregando…</p> : rows.length === 0 ? <p className="p-6 text-muted-foreground">Nenhum chamado encontrado.</p> : (
           <ul className="divide-y">

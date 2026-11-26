@@ -78,7 +78,10 @@ function Detalhe() {
     try {
       const { data: paths, error } = await supabase.rpc("delete_closed_ticket", { _ticket: id });
       if (error) { toast.error(error.message || "Não foi possível excluir o chamado."); return; }
-      if (paths?.length) await supabase.storage.from("attachments").remove(paths);
+      if (paths?.length) {
+        const { error: rmError } = await supabase.storage.from("attachments").remove(paths);
+        if (rmError) toast.warning("Chamado excluído, mas alguns arquivos anexos não puderam ser apagados.");
+      }
       toast.success("Chamado excluído.");
       refresh();
       navigate({ to: "/chamados" });
@@ -88,7 +91,9 @@ function Detalhe() {
 
   async function addComment() {
     if (!comment.trim() || !me || busy) return;
+    setBusy(true);
     const { error } = await supabase.from("ticket_events").insert({ ticket_id: id, actor_id: me.id, actor_name: me.full_name || me.username, event_type: "comment", note: comment.trim().slice(0, 3000) });
+    setBusy(false);
     if (error) { toast.error("Falha ao adicionar informação."); return; }
     setComment("");
     refresh();
