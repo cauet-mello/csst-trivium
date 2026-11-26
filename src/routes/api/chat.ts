@@ -26,6 +26,8 @@ export const Route = createFileRoute("/api/chat")({
         const sb = userClient(token);
         const { data: u, error } = await sb.auth.getUser(token);
         if (error || !u.user) return new Response("Não autenticado", { status: 401 });
+        const { data: ready, error: readinessError } = await sb.rpc('account_ready', { _user_id: u.user.id });
+        if (readinessError || !ready) return new Response('Acesso bloqueado. Defina sua senha pessoal.', { status: 403 });
 
         let messages;
         try {

@@ -2,7 +2,9 @@
 - [x] Corrigir erros reproduzíveis de funcionamento, acesso, exportação e segurança; validar testes e navegação
 - [x] Verificar login de Cauet nos modos administrador e solicitante, atualização da página, saída, senha inválida e bloqueio sem sessão
 - [x] Backend (Lovable Cloud): perfis, papéis, chamados, histórico, notificações, categorias, setores
-- [ ] Senha inicial de Ederson: aguarda substituição da senha rejeitada por ser fraca
+- [ ] Centralizar acesso na conta Administrador e retirar credenciais de Cauet e Ederson, preservando chamados
+- [ ] Gestão de Usuários: cadastro, senhas temporárias, troca obrigatória, redefinição, ativação, exclusão e auditoria
+- [ ] Validar acesso administrativo e operacional, bloqueios e gestão de contas
 - [x] Abertura de chamado + assistente IA (triagem, setor, prioridade)
 - [x] Lista/detalhe com linha do tempo e histórico imutável
 - [x] Dashboard com indicadores, filtros, exportação Excel/PDF

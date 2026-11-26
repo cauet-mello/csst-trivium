@@ -2,11 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, ShieldCheck, Sparkles, LineChart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { signInToApp } from "@/lib/login";
+import { signInToApp, resolveAccountDestination } from "@/lib/login";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import mascot from "@/assets/mascote_trivium_sem_fundo.png.asset.json";
 import logo from "@/assets/logo-trivium.png.asset.json";
 import symbolWhite from "@/assets/simbolo-branco.png.asset.json";
@@ -33,7 +32,6 @@ const SLIDES = [
 
 function Login() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"requester" | "admin">("requester");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,8 +39,10 @@ function Login() {
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/painel", replace: true });
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      try { await navigate({ to: await resolveAccountDestination(data.user.id), replace: true }); }
+      catch { await supabase.auth.signOut(); }
     });
     const t = setInterval(() => setSlide((s) => (s + 1) % SLIDES.length), 5000);
     return () => clearInterval(t);
@@ -54,7 +54,7 @@ function Login() {
     if (!username.trim() || !password) return setError("Informe login e senha.");
     setLoading(true);
     try {
-      const destination = await signInToApp(username, password, mode);
+      const destination = await signInToApp(username, password);
       await navigate({ to: destination, replace: true });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível entrar. Tente novamente.");
@@ -98,14 +98,7 @@ function Login() {
         <div className="w-full max-w-sm">
           <img src={logo.url} alt="Trivium" className="mx-auto h-20 object-contain" />
           <h2 className="mt-8 text-center text-2xl font-bold text-primary-deep">Bem-vindo(a)</h2>
-          <p className="mt-1 text-center text-sm text-muted-foreground">Entre com o login fornecido pela Segurança do Trabalho.</p>
-
-          <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="mt-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="requester">Solicitante</TabsTrigger>
-              <TabsTrigger value="admin">Administrador</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <p className="mt-1 text-center text-sm text-muted-foreground">Entre com o login fornecido pelo Administrador.</p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div className="space-y-1.5">

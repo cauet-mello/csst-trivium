@@ -1,0 +1,23 @@
+ALTER TABLE public.profiles ADD COLUMN must_change_password boolean NOT NULL DEFAULT false;
+ALTER TABLE public.profiles ADD COLUMN access_after timestamptz;
+REVOKE UPDATE ON public.profiles FROM authenticated;
+CREATE TABLE public.admin_audit (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), actor_id uuid NOT NULL, actor_name text NOT NULL, target_id uuid NOT NULL, target_name text NOT NULL, action text NOT NULL CHECK (action IN ('created','password_reset','activated','deactivated','deleted','role_changed','centralized')), created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT ON public.admin_audit TO authenticated;
+GRANT ALL ON public.admin_audit TO service_role;
+ALTER TABLE public.admin_audit ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION public.account_ready(_user_id uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$ SELECT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = _user_id AND p.active AND NOT p.must_change_password AND (p.access_after IS NULL OR to_timestamp(coalesce((auth.jwt()->>'iat')::double precision,0)) >= p.access_after)) $$;
+CREATE OR REPLACE FUNCTION public.is_staff(_user_id uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$ SELECT public.account_ready(_user_id) AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role = 'admin') $$;
+CREATE POLICY "admin audit read" ON public.admin_audit FOR SELECT TO authenticated USING (public.is_staff(auth.uid()));
+DO $$ DECLARE t text; BEGIN FOREACH t IN ARRAY ARRAY['tickets','ticket_events','ticket_attachments','notifications','departments','categories','routing_rules','sla_settings','app_settings','admin_audit'] LOOP EXECUTE format('CREATE POLICY "account readiness" ON public.%I AS RESTRICTIVE FOR ALL TO authenticated USING (public.account_ready(auth.uid())) WITH CHECK (public.account_ready(auth.uid()))', t); END LOOP; END $$;
+CREATE POLICY "attachment account readiness" ON storage.objects AS RESTRICTIVE FOR ALL TO authenticated USING (bucket_id <> 'attachments' OR public.account_ready(auth.uid())) WITH CHECK (bucket_id <> 'attachments' OR public.account_ready(auth.uid()));
+CREATE OR REPLACE FUNCTION public.replace_app_user_role(_actor_id uuid, _target_id uuid, _role public.app_role) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM public.profiles p JOIN public.user_roles r ON r.user_id=p.id WHERE p.id=_actor_id AND p.active AND NOT p.must_change_password AND r.role='admin') THEN RAISE EXCEPTION 'Acesso negado'; END IF;
+IF _role='developer' OR _actor_id=_target_id THEN RAISE EXCEPTION 'Operação não permitida'; END IF;
+PERFORM id FROM public.profiles WHERE id=_target_id FOR UPDATE;
+IF NOT FOUND THEN RAISE EXCEPTION 'Usuário não encontrado'; END IF;
+DELETE FROM public.user_roles WHERE user_id=_target_id;
+INSERT INTO public.user_roles(user_id,role) VALUES (_target_id,_role);
+INSERT INTO public.admin_audit(actor_id,actor_name,target_id,target_name,action) SELECT _actor_id,a.full_name,_target_id,t.username,'role_changed' FROM public.profiles a,public.profiles t WHERE a.id=_actor_id AND t.id=_target_id;
+END $$;
+REVOKE ALL ON FUNCTION public.replace_app_user_role(uuid,uuid,public.app_role) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.replace_app_user_role(uuid,uuid,public.app_role) TO service_role;

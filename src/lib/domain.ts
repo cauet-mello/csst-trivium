@@ -44,5 +44,5 @@ export function isOverdue(t: { due_at: string | null; status: string; closed_at:
 export const ROLE_LABEL: Record<Role, string> = {
   admin: "Administrador",
   developer: "Desenvolvedor",
-  requester: "Solicitante",
+  requester: "Usuário",
 };

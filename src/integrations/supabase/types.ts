@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_name: string
+          created_at: string
+          id: string
+          target_id: string
+          target_name: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          actor_name: string
+          created_at?: string
+          id?: string
+          target_id: string
+          target_name: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_name?: string
+          created_at?: string
+          id?: string
+          target_id?: string
+          target_name?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -115,29 +145,35 @@ export type Database = {
       }
       profiles: {
         Row: {
+          access_after: string | null
           active: boolean
           created_at: string
           department: string | null
           full_name: string
           id: string
+          must_change_password: boolean
           registration: string | null
           username: string
         }
         Insert: {
+          access_after?: string | null
           active?: boolean
           created_at?: string
           department?: string | null
           full_name?: string
           id: string
+          must_change_password?: boolean
           registration?: string | null
           username: string
         }
         Update: {
+          access_after?: string | null
           active?: boolean
           created_at?: string
           department?: string | null
           full_name?: string
           id?: string
+          must_change_password?: boolean
           registration?: string | null
           username?: string
         }
@@ -401,6 +437,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      account_ready: { Args: { _user_id: string }; Returns: boolean }
       actor_name: { Args: never; Returns: string }
       has_role: {
         Args: {

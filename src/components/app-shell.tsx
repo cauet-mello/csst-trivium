@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { Bell, ClipboardList, FilePlus2, Gauge, Home, LogOut, Menu, Settings } from "lucide-react";
+import { Bell, ClipboardList, FilePlus2, Gauge, Home, LogOut, Menu, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { ROLE_LABEL } from "@/lib/domain";
@@ -12,12 +12,15 @@ import { toast } from "sonner";
 import logo from "@/assets/logo-trivium.png.asset.json";
 import symbolWhite from "@/assets/simbolo-branco.png.asset.json";
 import { readData } from "@/lib/query-result";
+import { PasswordChangeForm } from './password-change';
+import { AdministratorHandover } from './administrator-handover';
 
 const NAV = [
   { to: "/painel", label: "Início", icon: Home, staff: false },
   { to: "/novo", label: "Abrir chamado", icon: FilePlus2, staff: false },
   { to: "/chamados", label: "Chamados", icon: ClipboardList, staff: false },
   { to: "/dashboard", label: "Dashboard", icon: Gauge, staff: true },
+  { to: "/usuarios", label: "Gestão de Usuários", icon: Users, staff: true },
 ] as const;
 
 function Nav({ onNav }: { onNav?: (() => void) | undefined }) {
@@ -25,7 +28,7 @@ function Nav({ onNav }: { onNav?: (() => void) | undefined }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return (
     <nav className="flex flex-col gap-1">
-      {NAV.filter((n) => !n.staff || me?.isStaff).map((n) => {
+      {NAV.filter((n) => n.to === '/usuarios' ? me?.roles.includes('admin') : !n.staff || me?.isStaff).map((n) => {
         const active = path === n.to || path.startsWith(n.to + "/");
         return (
           <Link
@@ -51,10 +54,10 @@ function SidebarBody({ onNav }: { onNav?: (() => void) | undefined }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) { toast.error("Não foi possível sair. Tente novamente."); return; }
     await qc.cancelQueries();
     qc.clear();
+    const { error } = await supabase.auth.signOut();
+    if (error) { toast.error("Não foi possível sair. Tente novamente."); return; }
     navigate({ to: "/", replace: true });
   }
   return (
@@ -119,7 +122,9 @@ function Bellbutton() {
 
 export function AppShell({ title, subtitle, actions, children }: { title: string; subtitle?: string; actions?: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const { error: accountError, refetch } = useMe();
+  const { data: me, error: accountError, refetch, isPending } = useMe();
+  if (me?.mustChangePassword) return <PasswordChangeForm />;
+  if (!isPending && !accountError && !me?.active) return <div className="flex min-h-screen items-center justify-center"><div><p>Esta conta não possui acesso ativo.</p><Link to="/" className="mt-4 block text-primary">Voltar ao login</Link></div></div>;
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
       <aside className="sticky top-0 hidden h-screen lg:block">
@@ -147,7 +152,8 @@ export function AppShell({ title, subtitle, actions, children }: { title: string
             <h1 className="text-2xl font-bold text-primary-deep md:text-3xl">{title}</h1>
             {subtitle && <p className="mt-1 text-muted-foreground">{subtitle}</p>}
           </div>
-          {accountError ? <div role="alert"><p>Não foi possível carregar seu acesso.</p><Button variant="outline" className="mt-3" onClick={() => refetch()}>Tentar novamente</Button></div> : children}
+          {me?.isDev && <AdministratorHandover />}
+          {accountError ? <div role="alert"><p>Não foi possível carregar seu acesso.</p><Button variant="outline" className="mt-3" onClick={() => refetch()}>Tentar novamente</Button></div> : isPending ? <p role="status">Carregando acesso…</p> : children}
         </main>
       </div>
     </div>

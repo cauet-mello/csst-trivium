@@ -36,6 +36,20 @@
       "when": 1795699499819,
       "tag": "0004_atomic_staff_role_replacement",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795700429227,
+      "tag": "0005_user_management_password_gate_and_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795700658323,
+      "tag": "0006_allow_ready_administrators_application_settings",
+      "breakpoints": true
     }
   ]
 }

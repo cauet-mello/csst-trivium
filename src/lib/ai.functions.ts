@@ -13,6 +13,8 @@ export const triageTicket = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    const { data: ready, error: readinessError } = await context.supabase.rpc('account_ready', { _user_id: context.userId });
+    if (readinessError || !ready) throw new Error('Acesso negado. Defina sua senha pessoal antes de continuar.');
     const { runTriage, buildSystemPrompt } = await import("./ai.server");
     const { data: rules, error: rulesError } = await context.supabase.from("routing_rules").select("topic, department, involves_safety, notes").eq("active", true);
     if (rulesError) return { ok: false as const, error: "Não foi possível carregar as orientações. Você pode registrar o chamado para análise humana." };

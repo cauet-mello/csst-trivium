@@ -1,0 +1,2 @@
+DROP POLICY "dev write" ON public.app_settings;
+CREATE POLICY "administrator write" ON public.app_settings FOR ALL TO authenticated USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));

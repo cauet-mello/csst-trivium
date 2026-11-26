@@ -12,6 +12,8 @@ export type Me = {
   roles: Role[];
   isStaff: boolean;
   isDev: boolean;
+  active: boolean;
+  mustChangePassword: boolean;
 };
 
 export function useMe() {
@@ -36,8 +38,11 @@ export function useMe() {
         roles,
         isStaff: roles.includes("admin") || roles.includes("developer"),
         isDev: roles.includes("developer"),
+        active: p?.active ?? false,
+        mustChangePassword: p?.must_change_password ?? false,
       };
     },
     staleTime: 60_000,
+    refetchInterval: 15_000,
   });
 }
