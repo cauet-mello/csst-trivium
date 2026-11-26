@@ -7,7 +7,7 @@ import { Conversation, ConversationContent, ConversationEmptyState, Conversation
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import symbol from "@/assets/gpt.png.asset.json";
+import symbol from "@/assets/trivito.png.asset.json";
 
 export function AiAssistant() {
   const transport = useMemo(
@@ -32,7 +32,7 @@ export function AiAssistant() {
       <div className="flex items-center gap-3 border-b bg-secondary/60 px-4 py-3">
         <img src={symbol.url} alt="" className="size-9 rounded-full bg-card object-contain p-1" />
         <div>
-          <div className="font-display font-semibold text-primary-deep">Trivinho · Assistente SST</div>
+          <div className="font-display font-semibold text-primary-deep">Trivito · Assistente SST</div>
           <div className="text-xs text-muted-foreground">Inteligência Artificial para orientar seu chamado</div>
         </div>
       </div>
