@@ -439,6 +439,7 @@ export type Database = {
     Functions: {
       account_ready: { Args: { _user_id: string }; Returns: boolean }
       actor_name: { Args: never; Returns: string }
+      delete_closed_ticket: { Args: { _ticket: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

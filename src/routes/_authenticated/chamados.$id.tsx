@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { ArrowLeft, Bot, Check, FileText, MessageSquare, Paperclip, Loader2 } from "lucide-react";
+import { ArrowLeft, Bot, Check, FileText, MessageSquare, Paperclip, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { AppShell } from "@/components/app-shell";
@@ -70,6 +71,21 @@ function Detalhe() {
     finally { setBusy(false); }
   }
 
+  const navigate = useNavigate();
+  async function removeTicket() {
+    if (busy || !me?.isStaff) return;
+    setBusy(true);
+    try {
+      const { data: paths, error } = await supabase.rpc("delete_closed_ticket", { _ticket: id });
+      if (error) { toast.error(error.message || "Não foi possível excluir o chamado."); return; }
+      if (paths?.length) await supabase.storage.from("attachments").remove(paths);
+      toast.success("Chamado excluído.");
+      refresh();
+      navigate({ to: "/chamados" });
+    } catch { toast.error("Não foi possível excluir o chamado."); }
+    finally { setBusy(false); }
+  }
+
   async function addComment() {
     if (!comment.trim() || !me || busy) return;
     const { error } = await supabase.from("ticket_events").insert({ ticket_id: id, actor_id: me.id, actor_name: me.full_name || me.username, event_type: "comment", note: comment.trim().slice(0, 3000) });
@@ -101,7 +117,24 @@ function Detalhe() {
   const flowIdx = FLOW.indexOf(t.status as any);
 
   return (
-    <AppShell title={t.title} subtitle={`${t.protocol} · aberto em ${dt(t.created_at)}`} actions={<Button asChild variant="ghost" size="sm"><Link to="/chamados"><ArrowLeft /> Voltar</Link></Button>}>
+    <AppShell title={t.title} subtitle={`${t.protocol} · aberto em ${dt(t.created_at)}`} actions={<div className="flex gap-2">
+      {me?.isStaff && (t.status === "concluido" || t.status === "cancelado") && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild><Button variant="destructive" size="sm" disabled={busy}><Trash2 /> Excluir chamado</Button></AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir {t.protocol}?</AlertDialogTitle>
+              <AlertDialogDescription>O chamado, seu histórico e seus anexos serão apagados definitivamente. Esta ação não pode ser desfeita.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Voltar</AlertDialogCancel>
+              <AlertDialogAction onClick={removeTicket} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      <Button asChild variant="ghost" size="sm"><Link to="/chamados"><ArrowLeft /> Voltar</Link></Button>
+    </div>}>
       {/* Stepper */}
       <div className="mb-6 rounded-2xl bg-card p-5 shadow-card">
         <ol className="grid grid-cols-5 gap-1">

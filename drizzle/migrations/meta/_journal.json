@@ -57,6 +57,13 @@
       "when": 1795701255610,
       "tag": "0007_preserve_legacy_access_until_administrator_handover",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795704286482,
+      "tag": "0008_delete_closed_tickets",
+      "breakpoints": true
     }
   ]
 }
