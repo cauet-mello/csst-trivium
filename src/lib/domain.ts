@@ -35,6 +35,13 @@ export const STATUSES: { value: Status; label: string }[] = [
 export const statusLabel = (s?: string | null) => STATUSES.find((x) => x.value === s)?.label ?? "-";
 export const OPEN_STATUSES: Status[] = ["enviado", "recebido", "em_analise", "em_andamento", "aguardando_info", "encaminhado"];
 
+export const DUE_SOON_HOURS = 24;
+export function isDueSoon(t: { due_at: string | null; status: string; closed_at: string | null }, now: Date = new Date()) {
+  if (!t.due_at || t.closed_at || !OPEN_STATUSES.includes(t.status as Status)) return false;
+  const left = new Date(t.due_at).getTime() - now.getTime();
+  return left > 0 && left <= DUE_SOON_HOURS * 3600_000;
+}
+
 export function isOverdue(t: { due_at: string | null; status: string; closed_at: string | null }) {
   if (!t.due_at) return false;
   const end = t.closed_at ? new Date(t.closed_at) : new Date();

@@ -33,7 +33,8 @@ export const Route = createFileRoute("/api/chat")({
         try {
           const body = await request.json();
           if (!body || !Array.isArray(body.messages) || !body.messages.length) return new Response("Sem mensagens", { status: 400 });
-          messages = await validateUIMessages({ messages: body.messages.slice(-30) });
+          messages = (await validateUIMessages({ messages: body.messages.slice(-30) })).filter((m) => m.role === "user" || m.role === "assistant");
+          if (!messages.length) return new Response("Sem mensagens", { status: 400 });
         } catch {
           return new Response("Mensagens inválidas", { status: 400 });
         }

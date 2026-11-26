@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { Bell, ClipboardList, FilePlus2, Gauge, Home, LogOut, Menu, Users } from "lucide-react";
+import { Bell, ClipboardList, FilePlus2, Gauge, Home, LogOut, Menu, Settings, Trash2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { ROLE_LABEL } from "@/lib/domain";
@@ -20,6 +20,8 @@ const NAV = [
   { to: "/novo", label: "Abrir chamado", icon: FilePlus2, staff: false },
   { to: "/chamados", label: "Chamados", icon: ClipboardList, staff: false },
   { to: "/dashboard", label: "Dashboard", icon: Gauge, staff: true },
+  { to: "/configuracoes", label: "Configurações", icon: Settings, staff: true },
+  { to: "/lixeira", label: "Lixeira", icon: Trash2, staff: true },
   { to: "/usuarios", label: "Gestão de Usuários", icon: Users, staff: true },
 ] as const;
 

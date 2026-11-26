@@ -23,7 +23,7 @@ function Painel() {
     enabled: !!me,
     queryFn: async () => {
       if (!me) return [];
-      return readData(await supabase.from("tickets").select("id, protocol, title, status, priority, created_at").eq("requester_id", me.id).order("created_at", { ascending: false }).limit(8)) ?? [];
+      return readData(await supabase.from("tickets").select("id, protocol, title, status, priority, created_at").eq("requester_id", me.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(8)) ?? [];
     },
   });
   const { data: counts, error: countsError } = useQuery({

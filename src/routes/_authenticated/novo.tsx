@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, Loader2, Paperclip, Sparkles, Info } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Paperclip, Sparkles, Info, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { AppShell } from "@/components/app-shell";
@@ -192,8 +192,13 @@ function NovoChamado() {
           <Field label="Anexos (imagens e documentos)">
             <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed p-3 text-sm text-muted-foreground hover:bg-muted/50">
               <Paperclip className="size-4" /> {files.length ? `${files.length} arquivo(s) selecionado(s)` : "Clique para anexar (até 20 MB cada)"}
-              <input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" className="hidden" onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
+              <input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" className="hidden" onChange={(e) => setFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])])} />
             </label>
+            <label className="mt-2 flex cursor-pointer items-center gap-2 rounded-lg border border-dashed p-3 text-sm text-muted-foreground hover:bg-muted/50">
+              <Camera className="size-4" /> Tirar foto agora (celular)
+              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => setFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])])} />
+            </label>
+            {files.length > 0 && <button type="button" className="mt-1 text-xs text-muted-foreground underline" onClick={() => setFiles([])}>Remover anexos selecionados</button>}
           </Field>
           <div className="flex justify-end">
             <Button type="submit" size="lg" disabled={saving || !me || !!catsError || !!depsError}>{saving && <Loader2 className="animate-spin" />} Registrar chamado</Button>

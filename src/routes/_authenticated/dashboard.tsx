@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { format, subDays } from "date-fns";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AlertOctagon, Download, FileSpreadsheet } from "lucide-react";
+import { AlertOctagon, CalendarDays, Download, FileSpreadsheet } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { AppShell } from "@/components/app-shell";
@@ -26,6 +27,7 @@ const fmtH = (h: number | null) => (h == null ? "-" : h < 48 ? `${h.toFixed(1)} 
 function Dashboard() {
   const { data: me } = useMe();
   const [period, setPeriod] = useState("30");
+  const [month, setMonth] = useState(() => format(new Date(), "yyyy-MM"));
   const [fDep, setFDep] = useState("all");
   const [fPri, setFPri] = useState("all");
   const [fSt, setFSt] = useState("all");
@@ -37,7 +39,7 @@ function Dashboard() {
     queryKey: ["dash-tickets", me?.id],
     enabled: !!me?.isStaff,
     refetchInterval: 30_000,
-    queryFn: async () => readData(await supabase.from("tickets").select("*").order("created_at", { ascending: false }).limit(5000)) ?? [],
+    queryFn: async () => readData(await supabase.from("tickets").select("*").is("deleted_at", null).order("created_at", { ascending: false }).limit(5000)) ?? [],
   });
 
   const uniq = (k: "department" | "category" | "assignee_name" | "requester_name") => Array.from(new Set(all.map((t) => t[k]).filter(Boolean))) as string[];
@@ -115,6 +117,33 @@ function Dashboard() {
     doc.save(`chamados-sst-${format(new Date(), "yyyyMMdd-HHmm")}.pdf`);
   }
 
+  async function exportMonthly() {
+    if (!me?.isStaff || dataError || loadingTickets || !month) return;
+    const [y, m] = month.split("-").map(Number);
+    if (!y || !m) return;
+    const start = new Date(y, m - 1, 1), end = new Date(y, m, 1);
+    const rows = all.filter((t) => { const c = new Date(t.created_at); return c >= start && c < end; });
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF();
+    doc.setFontSize(16); doc.text(`Relatório mensal SST — ${format(start, "MM/yyyy")}`, 14, 16);
+    const rated = rows.filter((t) => t.rating != null);
+    const avg = rated.length ? (rated.reduce((a, t) => a + (t.rating ?? 0), 0) / rated.length).toFixed(1) : "-";
+    doc.setFontSize(10);
+    doc.text(`Abertos: ${rows.length} · Concluídos: ${rows.filter((t) => t.status === "concluido").length} · Fora do prazo: ${rows.filter((t) => isOverdue(t) && t.status !== "cancelado").length} · Satisfação média: ${avg} (${rated.length} avaliações)`, 14, 23);
+    const deps = Array.from(new Set(rows.map((t) => t.department))).sort();
+    autoTable(doc, {
+      startY: 28, styles: { fontSize: 8 }, headStyles: { fillColor: [42, 81, 117] },
+      head: [["Setor", "Abertos", "Concluídos", "Em aberto", "Críticos", "Fora do prazo", "Satisfação"]],
+      body: deps.map((d) => {
+        const r = rows.filter((t) => t.department === d);
+        const rr = r.filter((t) => t.rating != null);
+        return [d, r.length, r.filter((t) => t.status === "concluido").length, r.filter((t) => OPEN_STATUSES.includes(t.status as never)).length, r.filter((t) => t.priority === "critica").length, r.filter((t) => isOverdue(t) && t.status !== "cancelado").length, rr.length ? (rr.reduce((a, t) => a + (t.rating ?? 0), 0) / rr.length).toFixed(1) : "-"];
+      }),
+    });
+    doc.save(`relatorio-mensal-sst-${month}.pdf`);
+  }
+
   if (!me) return <AppShell title="Dashboard"><p>Carregando acesso…</p></AppShell>;
   if (!me.isStaff) return <AppShell title="Dashboard"><p>Acesso restrito à administração.</p></AppShell>;
   const capped = all.length >= 5000;
@@ -130,7 +159,7 @@ function Dashboard() {
   const toOpts = (a: string[]) => a.map((x) => ({ value: x, label: x }));
 
   return (
-    <AppShell title="Dashboard gerencial" actions={<><Button variant="outline" size="sm" onClick={exportXlsx}><FileSpreadsheet /> Excel</Button><Button variant="outline" size="sm" onClick={exportPdf}><Download /> PDF</Button></>}>
+    <AppShell title="Dashboard gerencial" actions={<><Button variant="outline" size="sm" onClick={exportXlsx}><FileSpreadsheet /> Excel</Button><Button variant="outline" size="sm" onClick={exportPdf}><Download /> PDF</Button><Input type="month" aria-label="Mês do relatório" className="h-9 w-40" value={month} onChange={(e) => setMonth(e.target.value)} /><Button variant="outline" size="sm" onClick={exportMonthly} disabled={!month}><CalendarDays /> Relatório do mês</Button></>}>
       {capped && <p className="mb-3 text-sm text-muted-foreground">Os indicadores consideram os 5000 chamados mais recentes.</p>}
       <div className="relative mb-6 overflow-hidden rounded-2xl bg-hero p-6 text-primary-foreground shadow-card">
         <p className="text-sm opacity-80">Segurança do Trabalho · Trivium Indústrias</p>

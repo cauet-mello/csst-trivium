@@ -329,6 +329,8 @@ export type Database = {
           category: string
           closed_at: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_by_name: string | null
           department: string
           description: string
           due_at: string | null
@@ -338,6 +340,9 @@ export type Database = {
           observations: string | null
           priority: Database["public"]["Enums"]["ticket_priority"]
           protocol: string | null
+          rated_at: string | null
+          rating: number | null
+          rating_comment: string | null
           received_at: string | null
           registration: string
           requester_id: string
@@ -361,6 +366,8 @@ export type Database = {
           category: string
           closed_at?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by_name?: string | null
           department: string
           description: string
           due_at?: string | null
@@ -370,6 +377,9 @@ export type Database = {
           observations?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           protocol?: string | null
+          rated_at?: string | null
+          rating?: number | null
+          rating_comment?: string | null
           received_at?: string | null
           registration: string
           requester_id: string
@@ -393,6 +403,8 @@ export type Database = {
           category?: string
           closed_at?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by_name?: string | null
           department?: string
           description?: string
           due_at?: string | null
@@ -402,6 +414,9 @@ export type Database = {
           observations?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           protocol?: string | null
+          rated_at?: string | null
+          rating?: number | null
+          rating_comment?: string | null
           received_at?: string | null
           registration?: string
           requester_id?: string
@@ -452,6 +467,11 @@ export type Database = {
         Args: { _body: string; _kind: string; _ticket: string; _title: string }
         Returns: undefined
       }
+      purge_tickets: { Args: { _ticket?: string }; Returns: string[] }
+      rate_ticket: {
+        Args: { _comment: string; _rating: number; _ticket: string }
+        Returns: undefined
+      }
       replace_app_user_role: {
         Args: {
           _actor_id: string
@@ -460,6 +480,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      restore_ticket: { Args: { _ticket: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "developer" | "requester"

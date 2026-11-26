@@ -13,7 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PriorityBadge, StatusBadge } from "@/components/badges";
-import { FLOW, PRIORITIES, STATUSES, isOverdue, priorityLabel, statusLabel } from "@/lib/domain";
+import { RatingCard } from "@/components/rating-card";
+import { FLOW, PRIORITIES, STATUSES, isDueSoon, isOverdue, priorityLabel, statusLabel } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { saveTicketAttachment } from "@/lib/attachments";
 import { readData } from "@/lib/query-result";
@@ -76,13 +77,9 @@ function Detalhe() {
     if (busy || !me?.isStaff) return;
     setBusy(true);
     try {
-      const { data: paths, error } = await supabase.rpc("delete_closed_ticket", { _ticket: id });
+      const { error } = await supabase.rpc("delete_closed_ticket", { _ticket: id });
       if (error) { toast.error(error.message || "Não foi possível excluir o chamado."); return; }
-      if (paths?.length) {
-        const { error: rmError } = await supabase.storage.from("attachments").remove(paths);
-        if (rmError) toast.warning("Chamado excluído, mas alguns arquivos anexos não puderam ser apagados.");
-      }
-      toast.success("Chamado excluído.");
+      toast.success("Chamado enviado para a lixeira. Ele pode ser restaurado por 30 dias.");
       refresh();
       navigate({ to: "/chamados" });
     } catch { toast.error("Não foi possível excluir o chamado."); }
@@ -123,13 +120,13 @@ function Detalhe() {
 
   return (
     <AppShell title={t.title} subtitle={`${t.protocol} · aberto em ${dt(t.created_at)}`} actions={<div className="flex gap-2">
-      {me?.isStaff && (t.status === "concluido" || t.status === "cancelado") && (
+      {me?.isStaff && !t.deleted_at && (t.status === "concluido" || t.status === "cancelado") && (
         <AlertDialog>
           <AlertDialogTrigger asChild><Button variant="destructive" size="sm" disabled={busy}><Trash2 /> Excluir chamado</Button></AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Excluir {t.protocol}?</AlertDialogTitle>
-              <AlertDialogDescription>O chamado, seu histórico e seus anexos serão apagados definitivamente. Esta ação não pode ser desfeita.</AlertDialogDescription>
+              <AlertDialogDescription>O chamado vai para a lixeira e some das listas. Ele pode ser restaurado em até 30 dias; depois disso é apagado de vez, com histórico e anexos.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Voltar</AlertDialogCancel>
@@ -165,10 +162,13 @@ function Detalhe() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="space-y-6">
+          {t.status === "concluido" && (t.rated_at || t.requester_id === me?.id) && <RatingCard ticket={t} canRate={t.requester_id === me?.id && !t.rated_at} onDone={refresh} />}
           <section className="rounded-2xl bg-card p-5 shadow-card">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <PriorityBadge p={t.priority} /><StatusBadge s={t.status} />
               {isOverdue(t) && t.status !== "cancelado" && <span className="text-xs font-semibold text-destructive">Fora do prazo</span>}
+              {isDueSoon(t) && <span className="text-xs font-semibold text-p-alta">Vence em menos de 24h</span>}
+              {t.deleted_at && <span className="text-xs font-semibold text-destructive">Na lixeira</span>}
             </div>
             <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
               <Info k="Solicitante" v={`${t.requester_name} (mat. ${t.registration})`} />
