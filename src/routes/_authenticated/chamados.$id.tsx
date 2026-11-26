@@ -108,9 +108,12 @@ function Detalhe() {
   }
 
   async function openAtt(path: string) {
-    const { data, error } = await supabase.storage.from("attachments").createSignedUrl(path, 120);
-    if (error || !data) { toast.error("Não foi possível abrir o anexo."); return; }
-    window.open(data.signedUrl, "_blank", "noopener");
+    const win = window.open("", "_blank");
+    const { data, error } = await supabase.storage.from("attachments").download(path);
+    if (error || !data) { win?.close(); toast.error("Não foi possível abrir o anexo."); return; }
+    const url = URL.createObjectURL(data);
+    if (win) win.location.href = url; else window.location.assign(url);
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
   if (isPending) return <AppShell title="Chamado"><p className="text-muted-foreground">Carregando…</p></AppShell>;
