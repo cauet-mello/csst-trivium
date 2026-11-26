@@ -1,4 +1,5 @@
 # Roadmap — Trivium Chamados SST
+- [ ] Corrigir erros reproduzíveis de funcionamento, acesso, exportação e segurança; validar testes e navegação
 - [x] Verificar login de Cauet nos modos administrador e solicitante, atualização da página, saída, senha inválida e bloqueio sem sessão
 - [ ] Backend (Lovable Cloud): perfis, papéis, chamados, histórico, notificações, categorias, setores
 - [ ] Senha inicial de Ederson: aguarda substituição da senha rejeitada por ser fraca
